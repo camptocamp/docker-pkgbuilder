@@ -1,0 +1,32 @@
+FROM debian:jessie
+
+# look at the setup.cfg to check dependency versions
+ENV AWSCLI_VERSION 1.9.12
+ENV BOTOCORE_VERSION 1.3.12
+ENV BUILD_DIR /root/build
+ENV MAINTAINER Mathieu Bornoz <mathieu.bornoz@camptocamp.com>
+
+RUN apt-get update \
+  && apt-get install -y python-stdeb dh-python python-dateutil \
+  && apt-get install -y python-colorama python-rsa python-jmespath python-docutils
+
+RUN mkdir -p ${BUILD_DIR}
+
+ADD https://pypi.python.org/packages/source/b/botocore/botocore-${BOTOCORE_VERSION}.tar.gz ${BUILD_DIR}/
+ADD https://pypi.python.org/packages/source/a/awscli/awscli-${AWSCLI_VERSION}.tar.gz ${BUILD_DIR}/
+
+RUN echo "[DEFAULT]\nPackage: awscli" > ${BUILD_DIR}/awscli.cfg
+
+RUN py2dsc -d ${BUILD_DIR}/botocore -m "${MAINTAINER}" ${BUILD_DIR}/botocore-${BOTOCORE_VERSION}.tar.gz
+RUN py2dsc -d ${BUILD_DIR}/awscli -x ${BUILD_DIR}/awscli.cfg -m "${MAINTAINER}" ${BUILD_DIR}/awscli-${AWSCLI_VERSION}.tar.gz
+
+WORKDIR ${BUILD_DIR}/botocore/botocore-${BOTOCORE_VERSION}
+RUN dpkg-buildpackage -rfakeroot -uc -us
+
+WORKDIR ${BUILD_DIR}/botocore
+RUN dpkg -i *.deb
+
+WORKDIR ${BUILD_DIR}/awscli/awscli-${AWSCLI_VERSION}
+RUN dpkg-buildpackage -rfakeroot -uc -us
+
+WORKDIR /
