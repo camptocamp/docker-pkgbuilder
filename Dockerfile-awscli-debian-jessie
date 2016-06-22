@@ -1,32 +1,34 @@
 FROM debian:jessie
 
 # look at the setup.cfg to check dependency versions
-ENV AWSCLI_VERSION 1.9.12
-ENV BOTOCORE_VERSION 1.3.12
+ENV VERSION c2c+1
+ENV AWSCLI_VERSION 1.10.38
+ENV BOTOCORE_VERSION 1.4.28
+ENV S3TRANSFER_VERSION 0.0.1
 ENV BUILD_DIR /root/build
 ENV MAINTAINER Mathieu Bornoz <mathieu.bornoz@camptocamp.com>
 
 RUN apt-get update \
   && apt-get install -y python-stdeb dh-python python-dateutil \
-  && apt-get install -y python-colorama python-rsa python-jmespath python-docutils
+  && apt-get install -y python-colorama python-rsa python-jmespath python-docutils python-concurrent.futures
 
-RUN mkdir -p ${BUILD_DIR}
+RUN mkdir -p ${BUILD_DIR} \
+  && cd ${BUILD_DIR} \
+  && pypi-download botocore --release=${BOTOCORE_VERSION} \
+  && pypi-download s3transfer --release=${S3TRANSFER_VERSION} \
+  && pypi-download awscli --release=${AWSCLI_VERSION}
 
-ADD https://pypi.python.org/packages/source/b/botocore/botocore-${BOTOCORE_VERSION}.tar.gz ${BUILD_DIR}/
-ADD https://pypi.python.org/packages/source/a/awscli/awscli-${AWSCLI_VERSION}.tar.gz ${BUILD_DIR}/
-
-RUN echo "[DEFAULT]\nPackage: awscli" > ${BUILD_DIR}/awscli.cfg
-
-RUN py2dsc -d ${BUILD_DIR}/botocore -m "${MAINTAINER}" ${BUILD_DIR}/botocore-${BOTOCORE_VERSION}.tar.gz
-RUN py2dsc -d ${BUILD_DIR}/awscli -x ${BUILD_DIR}/awscli.cfg -m "${MAINTAINER}" ${BUILD_DIR}/awscli-${AWSCLI_VERSION}.tar.gz
-
-WORKDIR ${BUILD_DIR}/botocore/botocore-${BOTOCORE_VERSION}
-RUN dpkg-buildpackage -rfakeroot -uc -us
-
+RUN echo "[DEFAULT]\nSource: python-botocore\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/botocore.cfg
+RUN py2dsc-deb -d ${BUILD_DIR}/botocore -x ${BUILD_DIR}/botocore.cfg ${BUILD_DIR}/botocore-${BOTOCORE_VERSION}.tar.gz
 WORKDIR ${BUILD_DIR}/botocore
 RUN dpkg -i *.deb
 
-WORKDIR ${BUILD_DIR}/awscli/awscli-${AWSCLI_VERSION}
-RUN dpkg-buildpackage -rfakeroot -uc -us
+RUN echo "[DEFAULT]\nSource: python-s3transfer\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/s3transfer.cfg
+RUN py2dsc-deb -d ${BUILD_DIR}/s3transfer -x ${BUILD_DIR}/s3transfer.cfg ${BUILD_DIR}/s3transfer-${S3TRANSFER_VERSION}.tar.gz
+WORKDIR ${BUILD_DIR}/s3transfer
+RUN dpkg -i *.deb
+
+RUN echo "[DEFAULT]\nSource: awscli\nPackage: awscli\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/awscli.cfg
+RUN py2dsc-deb -d ${BUILD_DIR}/awscli -x ${BUILD_DIR}/awscli.cfg ${BUILD_DIR}/awscli-${AWSCLI_VERSION}.tar.gz
 
 WORKDIR /

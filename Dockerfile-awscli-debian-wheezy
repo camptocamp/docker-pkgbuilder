@@ -1,0 +1,59 @@
+FROM debian:wheezy
+
+# look at the setup.cfg to check dependency versions
+ENV VERSION c2c+1
+ENV AWSCLI_VERSION 1.10.38
+ENV BOTOCORE_VERSION 1.4.28
+ENV S3TRANSFER_VERSION 0.0.1
+ENV COLORAMA_VERSION 0.3.7
+ENV RSA_VERSION 3.4.2
+ENV JMESPATH_VERSION 0.9.0
+ENV BUILD_DIR /root/build
+ENV MAINTAINER Mathieu Bornoz <mathieu.bornoz@camptocamp.com>
+
+RUN echo "deb http://ftp.debian.org/debian wheezy-backports main" >> /etc/apt/sources.list
+
+RUN apt-get update \
+  && apt-get install -y python-all python-pyasn1 python-pip python-requests python-dateutil python-docutils python-concurrent.futures dh-make \
+  && apt-get install -t wheezy-backports -y dh-python
+
+RUN pip install stdeb
+
+RUN mkdir -p ${BUILD_DIR} \
+  && cd ${BUILD_DIR} \
+  && pypi-download rsa --release=${RSA_VERSION} \
+  && pypi-download colorama --release=${COLORAMA_VERSION} \
+  && pypi-download jmespath --release=${JMESPATH_VERSION} \
+  && pypi-download botocore --release=${BOTOCORE_VERSION} \
+  && pypi-download s3transfer --release=${S3TRANSFER_VERSION} \
+  && pypi-download awscli --release=${AWSCLI_VERSION}
+
+RUN echo "[DEFAULT]\nSource: python-rsa\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/rsa.cfg
+RUN py2dsc-deb -d ${BUILD_DIR}/rsa -x ${BUILD_DIR}/rsa.cfg ${BUILD_DIR}/rsa-${RSA_VERSION}.tar.gz
+WORKDIR ${BUILD_DIR}/rsa
+RUN dpkg -i *.deb
+
+RUN echo "[DEFAULT]\nSource: python-colorama\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/colorama.cfg
+RUN py2dsc-deb -d ${BUILD_DIR}/colorama -x ${BUILD_DIR}/colorama.cfg ${BUILD_DIR}/colorama-${COLORAMA_VERSION}.tar.gz
+WORKDIR ${BUILD_DIR}/colorama
+RUN dpkg -i *.deb
+
+RUN echo "[DEFAULT]\nSource: python-jmespath\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/jmespath.cfg
+RUN py2dsc-deb -d ${BUILD_DIR}/jmespath -x ${BUILD_DIR}/jmespath.cfg ${BUILD_DIR}/jmespath-${JMESPATH_VERSION}.tar.gz
+WORKDIR ${BUILD_DIR}/jmespath
+RUN dpkg -i *.deb
+
+RUN echo "[DEFAULT]\nSource: python-botocore\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/botocore.cfg
+RUN py2dsc-deb -d ${BUILD_DIR}/botocore -x ${BUILD_DIR}/botocore.cfg ${BUILD_DIR}/botocore-${BOTOCORE_VERSION}.tar.gz
+WORKDIR ${BUILD_DIR}/botocore
+RUN dpkg -i *.deb
+
+RUN echo "[DEFAULT]\nSource: python-s3transfer\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/s3transfer.cfg
+RUN py2dsc-deb -d ${BUILD_DIR}/s3transfer -x ${BUILD_DIR}/s3transfer.cfg ${BUILD_DIR}/s3transfer-${S3TRANSFER_VERSION}.tar.gz
+WORKDIR ${BUILD_DIR}/s3transfer
+RUN dpkg -i *.deb
+
+RUN echo "[DEFAULT]\nSource: awscli\nPackage: awscli\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/awscli.cfg
+RUN py2dsc-deb -d ${BUILD_DIR}/awscli -x ${BUILD_DIR}/awscli.cfg ${BUILD_DIR}/awscli-${AWSCLI_VERSION}.tar.gz
+
+WORKDIR /
