@@ -35,7 +35,7 @@ RUN py2dsc-deb -d ${BUILD_DIR}/boto3 -x ${BUILD_DIR}/boto3.cfg ${BUILD_DIR}/boto
 WORKDIR ${BUILD_DIR}/boto3
 RUN dpkg -i *.deb
 
-RUN echo "[DEFAULT]\nSource: awscli\nPackage: awscli\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/awscli.cfg
+RUN echo "[DEFAULT]\nSource: awscli\nPackage: awscli\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}\nDepends: python-six" > ${BUILD_DIR}/awscli.cfg
 RUN py2dsc-deb -d ${BUILD_DIR}/awscli -x ${BUILD_DIR}/awscli.cfg ${BUILD_DIR}/awscli-${AWSCLI_VERSION}.tar.gz
 
 WORKDIR /
