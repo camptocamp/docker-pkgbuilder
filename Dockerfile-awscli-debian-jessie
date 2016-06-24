@@ -4,6 +4,7 @@ FROM debian:jessie
 ENV VERSION c2c+1
 ENV AWSCLI_VERSION 1.10.38
 ENV BOTOCORE_VERSION 1.4.28
+ENV BOTO3_VERSION 1.3.1
 ENV S3TRANSFER_VERSION 0.0.1
 ENV BUILD_DIR /root/build
 ENV MAINTAINER Mathieu Bornoz <mathieu.bornoz@camptocamp.com>
@@ -16,6 +17,7 @@ RUN mkdir -p ${BUILD_DIR} \
   && cd ${BUILD_DIR} \
   && pypi-download botocore --release=${BOTOCORE_VERSION} \
   && pypi-download s3transfer --release=${S3TRANSFER_VERSION} \
+  && pypi-download boto3 --release=${BOTO3_VERSION} \
   && pypi-download awscli --release=${AWSCLI_VERSION}
 
 RUN echo "[DEFAULT]\nSource: python-botocore\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/botocore.cfg
@@ -26,6 +28,11 @@ RUN dpkg -i *.deb
 RUN echo "[DEFAULT]\nSource: python-s3transfer\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/s3transfer.cfg
 RUN py2dsc-deb -d ${BUILD_DIR}/s3transfer -x ${BUILD_DIR}/s3transfer.cfg ${BUILD_DIR}/s3transfer-${S3TRANSFER_VERSION}.tar.gz
 WORKDIR ${BUILD_DIR}/s3transfer
+RUN dpkg -i *.deb
+
+RUN echo "[DEFAULT]\nSource: python-boto3\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/boto3.cfg
+RUN py2dsc-deb -d ${BUILD_DIR}/boto3 -x ${BUILD_DIR}/boto3.cfg ${BUILD_DIR}/boto3-${BOTO3_VERSION}.tar.gz
+WORKDIR ${BUILD_DIR}/boto3
 RUN dpkg -i *.deb
 
 RUN echo "[DEFAULT]\nSource: awscli\nPackage: awscli\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/awscli.cfg
