@@ -2,10 +2,10 @@ FROM debian:wheezy
 
 # look at the setup.cfg to check dependency versions
 ENV VERSION c2c+1
-ENV AWSCLI_VERSION 1.10.38
-ENV BOTOCORE_VERSION 1.4.28
-ENV BOTO3_VERSION 1.3.1
-ENV S3TRANSFER_VERSION 0.0.1
+ENV AWSCLI_VERSION 1.10.66
+ENV BOTOCORE_VERSION 1.4.56
+ENV BOTO3_VERSION 1.4.0
+ENV S3TRANSFER_VERSION 0.1.4
 ENV COLORAMA_VERSION 0.3.7
 ENV RSA_VERSION 3.4.2
 ENV JMESPATH_VERSION 0.9.0
@@ -50,14 +50,14 @@ RUN py2dsc-deb -d ${BUILD_DIR}/botocore -x ${BUILD_DIR}/botocore.cfg ${BUILD_DIR
 WORKDIR ${BUILD_DIR}/botocore
 RUN dpkg -i *.deb
 
-RUN echo "[DEFAULT]\nSource: python-boto3\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/boto3.cfg
-RUN py2dsc-deb -d ${BUILD_DIR}/boto3 -x ${BUILD_DIR}/boto3.cfg ${BUILD_DIR}/boto3-${BOTO3_VERSION}.tar.gz
-WORKDIR ${BUILD_DIR}/boto3
-RUN dpkg -i *.deb
-
 RUN echo "[DEFAULT]\nSource: python-s3transfer\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/s3transfer.cfg
 RUN py2dsc-deb -d ${BUILD_DIR}/s3transfer -x ${BUILD_DIR}/s3transfer.cfg ${BUILD_DIR}/s3transfer-${S3TRANSFER_VERSION}.tar.gz
 WORKDIR ${BUILD_DIR}/s3transfer
+RUN dpkg -i *.deb
+
+RUN echo "[DEFAULT]\nSource: python-boto3\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}" > ${BUILD_DIR}/boto3.cfg
+RUN py2dsc-deb -d ${BUILD_DIR}/boto3 -x ${BUILD_DIR}/boto3.cfg ${BUILD_DIR}/boto3-${BOTO3_VERSION}.tar.gz
+WORKDIR ${BUILD_DIR}/boto3
 RUN dpkg -i *.deb
 
 RUN echo "[DEFAULT]\nSource: awscli\nPackage: awscli\nDebian-Version: ${VERSION}\nMaintainer: ${MAINTAINER}\nDepends: python-six" > ${BUILD_DIR}/awscli.cfg
